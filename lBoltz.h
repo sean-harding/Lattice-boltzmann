@@ -23,11 +23,12 @@ class latt2D{
         latt2D(int index,vec initState,double dT, vec &wx, vec &wy,char type,int lx,int ly);    //Constructor
         void stream(std::vector<latt2D> &l,vec &refl);
         void collide(vec &wx,vec &wy);
+        ivec streamChannels;
+
     private:
         /*wx and wy are the weight factors used to calculate velocities. All 2D lattice sites have the same
         eqWeight is used in the collision method to evaluate the equilibrium distribution*/
         double om;                       //Relaxation time divided by timestep
-        ivec streamChannels;
         char type;
 };
 #endif
