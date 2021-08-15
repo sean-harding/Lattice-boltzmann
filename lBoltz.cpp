@@ -35,24 +35,25 @@ latt2D::latt2D(int index,vec initState,double om, vec &wx, vec &wy,char type,int
         this->fVel[1] += wy[i]*initState[i];}
     
     //This works out nearest-neighbors and next-nearest neighbors
-    int y = index%lx;
-    int x = (index - y)/lx;
-    ivec args1 = {x,x-1,x,x+1,x,x-1,x+1,x+1,x-1};
-    ivec args2 = {y,y,y-1,y,y+1,y-1,y-1,y+1,y+1};
-    for(int i = 0;i<args1.size();i++){
-        if(args1[i]<0){
-            args1[i] = lx-1;}
-        if(args2[i]<0){
-            args2[i] = ly-1;}
-        if(args1[i]>lx){
-            args1[i] = 0;}
-        if(args2[i]>ly){
-            args2[i] = 0;}
-        this->streamChannels.push_back(args2[i]*lx+args1[i]);
-        if(index==4){
-        std::cout<<args2[i]*lx + args1[i]<<std::endl;}
+    int x = index%lx;
+    int y = index/lx;
+
+    //Index = y*lx + x
+    //Increase coordinate values by 1. If xcoo>lx or ycoo>ly replace by values modulo lx,ly (i.e. resets to zero)
+    //Decrease coordinate values by 1. If xcoo<0 or ycoo<0, replace by lx or ly
+    
+    ivec new_x = {x,    (x+1)%lx,   x,          (x+1)%lx,   (x-1)%lx , x        , (x-1)%lx, (x+1)%lx, (x-1)%lx}; 
+    ivec new_y = {y,    y,          (y+1)%ly,   (y+1)%ly,   y        ,(y-1)%ly  , (y-1)%ly, (y-1)%ly, (y+1)%ly};
+    for(int i=0; i<new_x.size();i++){
+        if(new_x[i]<0){new_x[i] = lx-1;}
+        if(new_y[i]<0){new_y[i]=ly-1;}
+        int neigh =new_y[i]*lx + new_x[i];
+        if(neigh>24){
+        std::cout<<this->index<<std::endl;            
+        } 
     }
-}
+
+}   
 /*
 625
 301
@@ -129,16 +130,21 @@ int main(){
     int nIter = 10;
     lattice l;
     std::vector<vec> densities; //Store the particle densities at each timestep
+    //latt2D ltest(4,initState,0.1,wx,wy,'f',5,5);
+    
+    
     l.reserve(25);
     densities.reserve(nIter);
     for(int i=0;i<25;i++){
         l.push_back(latt2D(i,initState,0.1,wx,wy,'f',5,5));}
     
     //Main body of program. Performs a number of streaming and collision operations
+    
+    /*
      for(int i=0;i<25;i++){
         l[i].stream(l,reflect);
         std::cout<<i<<std::endl;}
-
+    */
 
     //l[0].stream(l,reflect);
     //l[1].stream(l,reflect);
