@@ -1,11 +1,13 @@
 #include <vector>
 #include <iostream>
-#include "lBoltz.h"
+#include <fstream>
 #include <cmath>
+
+#include "lBoltz.h"
 
 typedef std::vector<double> vec;
 typedef std::vector<int> ivec;
-typedef std::vector<latt2D> lattice; //Use pointers to allow pass by reference
+typedef std::vector<latt2D> lattice;
 
 //Map a 2-parameter function across multiple argument pairs given in arg1 and arg2
 template<class FUNC, class T>
@@ -34,47 +36,49 @@ latt2D::latt2D(int index,vec initState,double om, vec &wx, vec &wy,char type,int
         this->fVel[0] += wx[i]*initState[i];
         this->fVel[1] += wy[i]*initState[i];}
     
-    //This works out nearest-neighbors and next-nearest neighbors
+    //This works out nearest-neighbors and next-nearest neighbors. index = y*ly + x
     int x = index%lx;
     int y = index/lx;
-
-    //Index = y*lx + x
-    //Increase coordinate values by 1. If xcoo>lx or ycoo>ly replace by values modulo lx,ly (i.e. resets to zero)
-    //Decrease coordinate values by 1. If xcoo<0 or ycoo<0, replace by lx or ly
+        
+    //ivec new_x = {x,(x+1)%lx,x,(x-1)%lx,x,(x+1)%lx,(x-1)%lx,(x-1)%lx,(x+1)%lx};
+    //ivec new_y = {y,y,(y-1)%ly,y,(y+1)%ly,(y-1)%ly,(y-1)%ly,(y+1)%ly,(y+1)%ly};
     
-    ivec new_x = {x,    (x+1)%lx,   x,          (x+1)%lx,   (x-1)%lx , x        , (x-1)%lx, (x+1)%lx, (x-1)%lx}; 
-    ivec new_y = {y,    y,          (y+1)%ly,   (y+1)%ly,   y        ,(y-1)%ly  , (y-1)%ly, (y-1)%ly, (y+1)%ly};
+    ivec new_x = {x,(x-1)%lx,x,(x+1)%lx,x,(x-1)%lx,(x+1)%lx,(x+1)%lx,(x-1)%lx};
+    ivec new_y = {y,y,(y+1)%ly,y,(y-1)%ly,(y-1)%ly,(y-1)%ly,(y+1)%ly,(y+1)%ly};
     for(int i=0; i<new_x.size();i++){
         if(new_x[i]<0){new_x[i] = lx-1;}
         if(new_y[i]<0){new_y[i]=ly-1;}
         int neigh =new_y[i]*lx + new_x[i];
-        if(neigh>24){
-        std::cout<<this->index<<std::endl;            
+        this->streamChannels.push_back(neigh);
         } 
-    }
-
 }   
-/*
-625
-301
-748
+/*  The velocity vector in position [i] in the array points from zero to adjacent sites. The order of these sites
+    is:
+        6 2 5
+        3 0 1
+        7 4 8
+    for example, the magnitude of the velocity vector (-1,0) is stored in array index [3].
 */
 
-//Takes a lattice site l and streams particles from it to neighbors
+//This function takes a lattice site l and streams particles from it to neighbors
 void latt2D::stream(lattice &l, vec &refl){
     for(int i=0;i<(this->vDist).size();i++){
         int whichSite = this->streamChannels[i];  //Which site to stream from. Work this out when objects
         if(l[whichSite].type != 'w'){                         //Check if there is a solid wall at that pixel
-        this->vDist_new[i] = l[whichSite].vDist[i];}
+        this->vDist_new[i] = l[whichSite].vDist[i];
+        }
         else{                                                 //Reflect particles off of the wall
         this->vDist_new[i] = this->vDist[refl[i]];            
         }
     }
 }
+/*
+This function relaxes the state of the fluid at a given lattice site depending on how close the state is
+  to thermodynamic equilibrium
+*/
 void latt2D::collide(vec &wx, vec &wy){
-    double o1;          //1- dt/T
-    double o2;          //dt/T
-    /*Relax particles at a given lattice site
+    /*
+    Relax particles at a given lattice site
     STEP 1.) Calculate the new macroscopic quanities from vDist_new
     STEP 2.) Calculate equilibrium distributions from macroscopic quantities, (F*_eq)
     STEP 3.) Update distribution as F_new = (1-t/T)*F_old +(t/T)*F*_eq
@@ -85,19 +89,19 @@ void latt2D::collide(vec &wx, vec &wy){
     */
 
     //STEP 1
+    this->fVel = vec {0,0};
+    this->dens = 0;
     for(int i=0;i<vDist_new.size();i++){
         this->dens+=this->vDist_new[i];
         this->fVel[0] += wx[i]*this->vDist_new[i];
         this->fVel[1] += wy[i]*this->vDist_new[i];
     }
-    
     //STEP 2
     //mag_u is |velocity|^2
-    double mag_u = 0;
-    for(int i =0;i<this->fVel.size();i++){
-        mag_u += pow(this->fVel[i],2);
+    double mag_u = 0.0;
+    for(int i =0;i<(this->fVel).size();i++){
+        mag_u += pow(this->fVel[i],2.0);        
     }
-    
     //Define lambda expression for the f1->f4
     auto expr1 = [this, &mag_u](double a,double b){
         return this->dens*(2+6*a+9*b+3*mag_u)/18;};
@@ -107,60 +111,75 @@ void latt2D::collide(vec &wx, vec &wy){
         return this->dens*(1+3*(a+b)+9*a*b+3*mag_u)/36;};
     
     //These are the function arguments
-    std::vector<double> args1 = {this->fVel[0],this->fVel[1],-1*this->fVel[0],-1*this->fVel[1]};
-    std::vector<double> args2 = {pow(this->fVel[0],2),pow(this->fVel[1],2),pow(this->fVel[0],2),pow(this->fVel[1],2)};
-    std::vector<double> args3 = {this->fVel[1],-1*this->fVel[0],-1*this->fVel[1],this->fVel[0]};
+    std::vector<double> args1 = {this->fVel[0],this->fVel[1],-1.0*this->fVel[0],-1.0*this->fVel[1]};
+    std::vector<double> args2 = {pow(this->fVel[0],2.0),pow(this->fVel[1],2.0),pow(this->fVel[0],2.0),pow(this->fVel[1],2.0)};
+    std::vector<double> args3 = {this->fVel[1],-1.0*this->fVel[0],-1.0*this->fVel[1],this->fVel[0]};
     
     //STEP 3
     //The following could be written more cleanly as each line of the if/else has the same structure
+    //Problem in the arguments??
     for(int i=0;i<this->vDist.size();i++){
         if(i==0){
             this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*(2-3*mag_u)*this->dens;}
         else if(i<5){
+            std::cout<<expr1(args1[i-1],args2[i-1])<<std::endl;
             this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*expr1(args1[i-1],args2[i-1]);}
         else{
-            this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*expr2(args1[i-1],args3[i-1]);}     //f2 through f8 inclusive 
+            std::cout<<expr2(args1[i-5],args2[i-5])<<std::endl;
+            this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*expr2(args1[i-5],args3[i-5]);}     //f2 through f8 inclusive 
     }
 }
 int main(){
-    vec initState = {1/sqrt(9),1/sqrt(9),1,1/sqrt(9),1/sqrt(9),1/sqrt(9),1/sqrt(9),1/sqrt(9),1/sqrt(9)};
-    vec wx = {0,1,0,-1,0,1/sqrt(2),-1/sqrt(2),-1/sqrt(2),1/sqrt(2)};
-    vec wy = {0,0,1,0,-1,1/sqrt(2),1/sqrt(2),-1/sqrt(2),-1/sqrt(2)};
+    vec initState = {0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0};
+    /*
+    double mag = 0;
+    for(int i=0;i<9;i++){
+        initState.push_back(rand()%10);
+        mag+=pow(initState.back(),2.0);
+    }
+    for(int i=0;i<9;i++){
+        initState[i] = initState[i]/sqrt(mag);
+    }
+    */
+
+    vec wx = {0.0,1,0.0,-1.0,0.0,1.0/sqrt(2),-1.0/sqrt(2),-1.0/sqrt(2),1.0/sqrt(2)};
+    vec wy = {0.0,0.0,1.0,0.0,-1.0,1.0/sqrt(2),1.0/sqrt(2),-1.0/sqrt(2),-1.0/sqrt(2)};
     vec reflect = {0,3,4,1,2,7,8,5,6};
-    int nIter = 10;
+    int nIter = 5;
     lattice l;
-    std::vector<vec> densities; //Store the particle densities at each timestep
-    //latt2D ltest(4,initState,0.1,wx,wy,'f',5,5);
-    
-    
+    std::ofstream outputFile;
+    outputFile.open("velocities.txt");
+
     l.reserve(25);
-    densities.reserve(nIter);
     for(int i=0;i<25;i++){
-        l.push_back(latt2D(i,initState,0.1,wx,wy,'f',5,5));}
+        l.push_back(latt2D(i,initState,pow(10,-1),wx,wy,'f',5,5));}
     
     //Main body of program. Performs a number of streaming and collision operations
     
-    /*
-     for(int i=0;i<25;i++){
-        l[i].stream(l,reflect);
-        std::cout<<i<<std::endl;}
-    */
-
-    //l[0].stream(l,reflect);
-    //l[1].stream(l,reflect);
-
+    for(int n=0;n<nIter;n++){
+        for(int i=0;i<25;i++){
+            l[i].stream(l,reflect);}
+        for(int i=0;i<25;i++){
+            l[i].collide(wx,wy);}
+        //Write particle velocities to a file
+        for(int i=0;i<25;i++){
+            outputFile<<l[i].fVel[0]<<","<<l[i].fVel[1]<<"\n";
+            //outputFile<<l[i].dens<<",";
+        };
+        outputFile<<"\n";}
+    outputFile.close();
     return 0;
-    
-    /*For parallelization, we wish to pass:
+}
+    /*
+    For parallelization using tbb, we wish to pass:
     [&](tbb::blocked_range<int> r){
         for(int i = r.start();i<r.end();i++){
-            L[i].stream(L);
+            l[i].stream(l,reflect);
         }}
     Followed by:
     [&](tbb::blocked_range<int> r){
         for(int i = r.start();i<r.end();i++){
-            L[i].collide(vx,vy);
+            l[i].collide(wx,wy);
         }}
-int index,vec initState,double dT, vec &wx, vec &wy,char type,int lx,int ly
-*/
-}
+    on each iteration to a tbb map function
+    */
