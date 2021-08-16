@@ -122,14 +122,16 @@ void latt2D::collide(vec &wx, vec &wy){
         if(i==0){
             this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*(2-3*mag_u)*this->dens;}
         else if(i<5){
-            std::cout<<expr1(args1[i-1],args2[i-1])<<std::endl;
             this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*expr1(args1[i-1],args2[i-1]);}
         else{
-            std::cout<<expr2(args1[i-5],args2[i-5])<<std::endl;
             this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*expr2(args1[i-5],args3[i-5]);}     //f2 through f8 inclusive 
     }
 }
-int main(){
+int main(int argc, char *argv[]){
+    if(argc==1){
+        std::cout<<"Program terminated: did not specify how many iterations to perform"<<std::endl;
+        return 0;
+    }
     vec initState = {0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0};
     /*
     double mag = 0;
@@ -145,7 +147,7 @@ int main(){
     vec wx = {0.0,1,0.0,-1.0,0.0,1.0/sqrt(2),-1.0/sqrt(2),-1.0/sqrt(2),1.0/sqrt(2)};
     vec wy = {0.0,0.0,1.0,0.0,-1.0,1.0/sqrt(2),1.0/sqrt(2),-1.0/sqrt(2),-1.0/sqrt(2)};
     vec reflect = {0,3,4,1,2,7,8,5,6};
-    int nIter = 5;
+    int nIter = std::atoi(argv[1]);
     lattice l;
     std::ofstream outputFile;
     outputFile.open("velocities.txt");
