@@ -3,18 +3,22 @@ from matplotlib.animation import FuncAnimation
 import scipy as sp
 import numpy as np
 #Need to add a header to the velocity text file to say how many sites there are
-N = 25
 data = np.loadtxt('velocities.txt',delimiter='\n',dtype='str')
-
-data_parsed = sp.recarray((int(len(data)/25),25),dtype=[('vx','float'),('vy','float')]) #Shape is nFrames,nSites
+size = data[0].split(",")
+size = [int(s) for s in size]
+N = size[0]*size[1]
+data_parsed = sp.recarray((int(len(data)/N),N),dtype=[('vx','float'),('vy','float')]) #Shape is nFrames,nSites
 
 for i,d in enumerate(data):
-    data_parsed[i//25,i%25] = tuple(d.split(','))
+    if i == 0:
+        pass
+    else:
+        data_parsed[(i-1)//N,(i-1)%N] = tuple(d.split(','))
 
 fig,ax = py.subplots()
-ax.set(xlim=(0,5),ylim=(0,5))
-x = sp.linspace(0,4,5)
-y = sp.linspace(0,4,5)
+ax.set(xlim=(0,size[0]),ylim=(0,size[1]))
+x = sp.linspace(0,size[0]-1,size[0])
+y = sp.linspace(0,size[1]-1,size[1])
 X,Y = sp.meshgrid(x,y)
 
 qax = ax.quiver(X,Y,data_parsed[0]['vx'],data_parsed[0]['vy'])
