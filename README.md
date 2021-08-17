@@ -1,13 +1,19 @@
 # Lattice-boltzmann
 -------------------|SIMULATION OF NON-EQUILIBRIUM FLUID FLOW USING THE LATTICE BOLTZMANN METHOD-------------------|
-Algorithm details are provided in "Graduate texts in physics: The Lattice Boltzmann Method - Principles and Practice"
+
+->Algorithm details are provided in "Graduate texts in physics: The Lattice Boltzmann Method - Principles and Practice"
+
 -> The basic idea is to work with the DISTRIBUTION FUNCTION f(r,t,v) of the fluid, which gives the probability of a fluid
 molecule having a particular velocity, v at a position r and time t.
+
 -> The equation which determines the evolution of the distribution function is the BOLTZMANN EQUATION
+
 -> By discretizing the fluid into boxes/cubes at discrete positions, the distribution function is discretized as
     f(r,t,v)-> f_i(r_k,t), where r_k points to a discrete lattice point. Each f_i goes along with a VELOCITY v_i
     which points between the lattice site r_k and some other lattice site at r_k + t*v_i
+
 -> By deciding on a TRUNCATED SET of velocities, the distribution function is represented simply as a set of numbers.
+
 -> Which velocity set is used depends on the calculation, and how the time interval t= n*dT for integer n and double dT is
 chosen
 
