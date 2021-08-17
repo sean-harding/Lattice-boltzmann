@@ -87,7 +87,7 @@ void latt2D::collide(int iter, vec &wx, vec &wy){
 
     //STEP 1
     if(iter!=0){
-    this->fVel = vec {0.1,0};
+    this->fVel = vec {0.0,0.0};
     this->dens = 0;
     for(int i=0;i<vDist_new.size();i++){
         this->dens+=this->vDist_new[i];
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]){
     }
     vec wx = {0.0,1,0.0,-1.0,0.0,1.0/sqrt(2),-1.0/sqrt(2),-1.0/sqrt(2),1.0/sqrt(2)};
     vec wy = {0.0,0.0,1.0,0.0,-1.0,1.0/sqrt(2),1.0/sqrt(2),-1.0/sqrt(2),-1.0/sqrt(2)};
-    vec iVel = {0.1,0};
+    vec iVel = {0,0.1};
     vec reflect = {0,3,4,1,2,7,8,5,6};
     int nIter = std::atoi(argv[1]);
     int lx = std::atoi(argv[2]);
@@ -145,8 +145,8 @@ int main(int argc, char *argv[]){
     l.reserve(nSites);
     //Put walls at the extreme left and right boundaries of the system
     for(int i=0;i<nSites;i++){
-        if(i%lx==0||i==lx){
-            l.push_back(latt2D(i,1.0,iVel,pow(10,-2),wx,wy,'f',lx,ly));}   //Set wall
+        if(i%lx==0||i%lx==lx-1){
+            l.push_back(latt2D(i,0.0,vec {0,0},pow(10,-2),wx,wy,'w',lx,ly));}   //Set wall
         else{
             l.push_back(latt2D(i,1.0,iVel,pow(10,-2),wx,wy,'f',lx,ly));}
         }   

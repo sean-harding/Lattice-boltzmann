@@ -20,14 +20,10 @@ class latt2D{
         vec vDist_new;              //Probability distribution for velocities: for writing new state to
         vec fVel;                 //Fluid velocity in 2D
         double dens;                //Fluid density
-        latt2D(int index,vec initState,double dT, vec &wx, vec &wy,char type,int lx,int ly);    //Constructor
+        latt2D(int index,double dens,vec iVel,double dT, vec &wx, vec &wy,char type,int lx,int ly);    //Constructor
         void stream(std::vector<latt2D> &l,vec &refl);
-        void collide(vec &wx,vec &wy);
+        void collide(int iter,vec &wx,vec &wy);
         ivec streamChannels;
-
-    private:
-        /*wx and wy are the weight factors used to calculate velocities. All 2D lattice sites have the same
-        eqWeight is used in the collision method to evaluate the equilibrium distribution*/
         double om;                       //Relaxation time divided by timestep
         char type;
 };
