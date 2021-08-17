@@ -1,6 +1,6 @@
 # Lattice-boltzmann
 -------------------|SIMULATION OF NON-EQUILIBRIUM FLUID FLOW USING THE LATTICE BOLTZMANN METHOD-------------------|
--> Algorithm details are provided in "Graduate texts in physics: The Lattice Boltzmann Method - Principles and Practice"
+Algorithm details are provided in "Graduate texts in physics: The Lattice Boltzmann Method - Principles and Practice"
 -> The basic idea is to work with the DISTRIBUTION FUNCTION f(r,t,v) of the fluid, which gives the probability of a fluid
 molecule having a particular velocity, v at a position r and time t.
 -> The equation which determines the evolution of the distribution function is the BOLTZMANN EQUATION
