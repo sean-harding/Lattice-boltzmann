@@ -22,7 +22,8 @@ class latt2D{
         double dens;                //Fluid density
         latt2D(int index,double dens,vec iVel,double dT, vec &wx, vec &wy,char type,int lx,int ly);    //Constructor
         void stream(std::vector<latt2D> &l,vec &refl);
-        void collide(int iter,vec &wx,vec &wy);
+        template<class FUNC> void collide(vec &wx,vec &wy,FUNC f);
+        void update(char what,vec &wx,vec &wy);
         ivec streamChannels;
         double om;                       //Relaxation time divided by timestep
         char type;

@@ -10,10 +10,7 @@ N = size[0]*size[1]
 data_parsed = sp.recarray((int(len(data)/N),N),dtype=[('vx','float'),('vy','float')]) #Shape is nFrames,nSites
 #Don't plot boundaries
 for i,d in enumerate(data):
-    if i == 0:
-        pass
-    else:
-        data_parsed[(i-1)//N,(i-1)%N] = tuple(d.split(','))
+    data_parsed[(i-1)//N,(i-1)%N] = tuple(d.split(','))
 
 fig,ax = py.subplots()
 ax.set(xlim=(0,size[0]),ylim=(0,size[1]))

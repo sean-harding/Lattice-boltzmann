@@ -47,6 +47,11 @@ latt2D::latt2D(int index,double dens, vec iVel,double om, vec &wx, vec &wy,char 
         int neigh =new_y[i]*lx + new_x[i];
         this->streamChannels.push_back(neigh);
         } 
+    /*Start by initializing the distribution to its equilibrium value.
+    The method of Mei. et.al will be used to find a correct initialization
+    following this*/
+    this->collide(wx,wy,[](double arg1, double arg2){return arg2;});
+    this->vDist_new = this->vDist;  //Check to make sure these are not pointing to the same thing
 }   
 /*  The velocity vector in position [i] in the array points from zero to adjacent sites. The order of these sites
     is:
@@ -65,7 +70,7 @@ void latt2D::stream(lattice &l, vec &refl){
         this->vDist_new[i] = l[whichSite].vDist[i];
         }
         else{                                                 //Reflect particles off of the wall
-        this->vDist_new[i] = this->vDist[refl[i]];            
+        this->vDist_new[i] = this->vDist[refl[i]];            //Reflect particles off of the wall
         }
     }
 }
@@ -73,7 +78,7 @@ void latt2D::stream(lattice &l, vec &refl){
 This function relaxes the state of the fluid at a given lattice site depending on how close the state is
   to thermodynamic equilibrium
 */
-void latt2D::collide(int iter, vec &wx, vec &wy){
+template<class FUNC> void latt2D::collide(vec &wx, vec &wy,FUNC f){
     /*
     Relax particles at a given lattice site
     STEP 1.) Calculate the new macroscopic quanities from vDist_new
@@ -86,14 +91,8 @@ void latt2D::collide(int iter, vec &wx, vec &wy){
     */
 
     //STEP 1
-    if(iter!=0){
-    this->fVel = vec {0.0,0.0};
-    this->dens = 0;
-    for(int i=0;i<vDist_new.size();i++){
-        this->dens+=this->vDist_new[i];
-        this->fVel[0] += wx[i]*this->vDist_new[i];
-        this->fVel[1] += wy[i]*this->vDist_new[i];
-    }}
+    //this->update('d',wx,wy);
+    //this->update('v',wx,wy);
     //STEP 2
     //mag_u is |velocity|^2
     double mag_u = 0.0;
@@ -118,51 +117,114 @@ void latt2D::collide(int iter, vec &wx, vec &wy){
     //Problem in the arguments??
     for(int i=0;i<this->vDist.size();i++){
         if(i==0){
-            this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*(2-3*mag_u)*this->dens;}
+            this->vDist[i] = f(this->vDist_new[i],(2*3*mag_u)*this->dens);}
+            //this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*(2-3*mag_u)*this->dens;}
         else if(i<5){
-            this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*expr1(args1[i-1],args2[i-1]);}
+            this->vDist[i] = f(this->vDist_new[i],expr1(args1[i-1],args2[i-1]));}
+            //this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*expr1(args1[i-1],args2[i-1]);}
         else{
-            this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*expr2(args1[i-5],args3[i-5]);}     //f2 through f8 inclusive 
+            this->vDist[i] = f(this->vDist_new[i],expr2(args1[i-5],args3[i-5]));}            
+            //this->vDist[i] = (1-this->om)*this->vDist_new[i] + this->om*expr2(args1[i-5],args3[i-5]);}     //f2 through f8 inclusive 
     }
 }
+void latt2D::update(char which, vec &wx, vec &wy){
+    if(which=='d'){
+        this->dens = 0;
+        for(int i=0;i<vDist_new.size();i++){
+            this->dens+=this->vDist_new[i];}
+            }    
+    else if(which=='v'){
+        this->fVel = vec {0.0,0.0};
+        for(int i=0;i<vDist_new.size();i++){
+            this->fVel[0] += wx[i]*this->vDist_new[i];
+            this->fVel[1] += wy[i]*this->vDist_new[i];}}
+    }
 int main(int argc, char *argv[]){
     if(argc==1){
         std::cout<<"Program terminated: please specify #iterations, lx, ly"<<std::endl;
         return 0;
     }
+
+    /*Simulate decaying Taylor-Green flow as a benchmark test. The following functions describe a particular flow
+    profile in 2D which solves the Navier-Stokes equation. The equations specified give the solution at time t=0
+    with the NS solution being an exponential decay of the velocity and density profiles. tg_x, tg_y and tg_d
+    are the values of the x-component of velocity, y-component of velocity and density of the TG solution at t=0
+    */
+    double u0 = 0.1;
+    double kx = M_PI/10;
+    double ky = M_PI/10;
+    double p0 = 1.0;        //This I suppose is somewhat arbitrary
+    double d0 = 1.0; 
+    auto tg_x = [&kx,&ky,&u0](double x,double y){return -u0*sqrt(kx/ky)*cos(kx*x)*sin(ky*y);};
+    auto tg_y = [&kx,&ky,&u0](double x,double y){return u0*sqrt(kx/ky)*sin(kx*x)*cos(ky*y);};
+    auto tg_d = [&](double x,double y){return p0 + 3*0.25*d0*pow(u0,2)*(ky*cos(2*kx*x)/kx+kx*cos(2*ky*y)/ky);};
+    //vec iVel = {0.1,0.1};
     vec wx = {0.0,1,0.0,-1.0,0.0,1.0/sqrt(2),-1.0/sqrt(2),-1.0/sqrt(2),1.0/sqrt(2)};
     vec wy = {0.0,0.0,1.0,0.0,-1.0,1.0/sqrt(2),1.0/sqrt(2),-1.0/sqrt(2),-1.0/sqrt(2)};
-    vec iVel = {0,0.1};
     vec reflect = {0,3,4,1,2,7,8,5,6};
+    double mix = 0.9*pow(10.0,-1.0);
+    
     int nIter = std::atoi(argv[1]);
     int lx = std::atoi(argv[2]);
     int ly = std::atoi(argv[3]);
+    
     int nSites = lx*ly;
     lattice l;
+    
     std::ofstream outputFile;
     outputFile.open("velocities.txt");
     outputFile<<lx<<","<<ly<<"\n";
     l.reserve(nSites);
-    //Put walls at the extreme left and right boundaries of the system
+    /*Put walls at the extreme left and right boundaries of the system if we wish. For the TG vortex
+    simulation I have turned walls off.
+    */
+    
     for(int i=0;i<nSites;i++){
+        vec iVel = {tg_x(i%lx,i/lx),tg_y(i%lx,i/lx)};
         if(i%lx==0||i%lx==lx-1){
-            l.push_back(latt2D(i,0.0,vec {0,0},pow(10,-2),wx,wy,'w',lx,ly));}   //Set wall
-        else{
-            l.push_back(latt2D(i,1.0,iVel,pow(10,-2),wx,wy,'f',lx,ly));}
+            l.push_back(latt2D(i,tg_d(i%lx,i/lx),iVel,mix,wx,wy,'f',lx,ly));}   //Allows us to set solid walls in the simulation
+        else{                                                       //with no-slip boundary conditions implemented
+            l.push_back(latt2D(i,tg_d(i%lx,i/lx),iVel,mix,wx,wy,'f',lx,ly));}
         }   
-
+    
+    double tol = pow(10.0,-10)/nSites;
+    double delta = 10;
+    int iter = 0;
+    
+    while(delta>tol&&iter<400){
+        iter+=1;
+        std::cout<<"Delta = "<<delta<<" Tolerance = "<<tol<<std::endl;
+        delta=0;
+        for(int i=0;i<nSites;i++){
+            if(l[i].type!='w'){
+                l[i].update('d',wx,wy);    
+                l[i].collide(wx,wy,[&mix](double arg1,double arg2){return (1-mix)*arg1 + mix*arg2;});}
+        }
+        for(int i=0;i<nSites;i++){
+            if(l[i].type!='w'){
+                l[i].stream(l,reflect);}
+                for(int k=0;k<l[i].vDist.size();k++){
+                    delta+=pow(l[i].vDist_new[k]-l[i].vDist[k],2.0);}
+        }
+    }
+    if(delta>tol){
+        std::cout<<"Initialization failed in "<<iter<<" iterations. Convergence threshold reached: " << delta<<std::endl;
+        return 0;
+    }
     //Main body of program. Performs a number of streaming and collision operations if the site has fluid in it
+    
     for(int n=0;n<nIter;n++){
         for(int i=0;i<nSites;i++){
             if(l[i].type!='w'){
-            l[i].collide(n,wx,wy);}}
+            l[i].update('d',wx,wy);
+            l[i].update('v',wx,wy);
+            l[i].collide(wx,wy,[&mix](double arg1,double arg2){return (1-mix)*arg1 + mix*arg2;});}}
         for(int i=0;i<nSites;i++){
             if(l[i].type!='w'){
             l[i].stream(l,reflect);}}
         //Write particle velocities to a file
         for(int i=0;i<nSites;i++){
             outputFile<<l[i].fVel[0]<<","<<l[i].fVel[1]<<"\n";
-            //outputFile<<l[i].dens<<",";
         };
         outputFile<<"\n";}
     outputFile.close();
