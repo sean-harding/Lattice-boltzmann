@@ -35,9 +35,9 @@ In the given version of the code, the LB method has been implemented and a simpl
 has been set up to test the code. This is an analytic solution to the Navier-Stokes equation, which describes the time evolution
 of the fluid density and velocity fields. 
 Some tests to run:
--> The decay of a single vortex can be seen using kx=ky=2pi, mix ~0.8, p0,d0 = 0 and v0=0.8. 
+-> The decay of a single vortex can be seen using kx=ky=2pi, mix = 0.8, p0,d0 = 0 and v0=0.8. 
 -> If the wavevector is reduced, the system size can be scaled up and the decay of multiple vortices can be seen.
-    (see a 40x40 lattice,m kx=ky=pi/8). Note that the initial velocity v0~0.1 is a good choice for this case, as 
+    (see a 40x40 lattice,m kx=ky=pi/8). Note that the initial velocity v0=0.1 is a good choice for this case, as 
     if v0 is too large then the vortex profiles interfere and we should probably need a much smaller timestep
 
 # COMPILATION AND RUNNING THE CODE
