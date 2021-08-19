@@ -33,3 +33,9 @@ relaxation time, so a COLLISION function has been written to take into account p
 2.) Particles with a given distribution are STREAMED to neighboring sites, representing the advection of matter.
 
 -> The LB algorithm consists of successive COLLISION and STREAMING steps to simulate the dynamics of the fluid.
+
+Some tests to run:
+-> The decay of a single vortex can be seen using kx=ky=2pi, mix ~0.8, p0,d0 = 0 and v0=0.8. 
+-> If the wavevector is reduced, the system size can be scaled up and the decay of multiple vortices can be seen.
+    (see a 40x40 lattice,m kx=ky=pi/8). Note that the initial velocity v0~0.1 is a good choice for this case, as 
+    if v0 is too large then the vortex profiles interfere and we should probably need a much smaller timestep
