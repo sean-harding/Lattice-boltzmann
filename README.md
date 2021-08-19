@@ -43,3 +43,4 @@ Some tests to run:
 # COMPILATION AND RUNNING THE CODE
 I have compiled the source code on my machine using g++: 'g++ -std=c++14 lBoltz.cpp -o lBoltz
 To run the code for X iterations on a grid of size YxZ, the excecutable is called with command line parameters, i.e. ./lBoltz X Y Z
+The python script used scipy and matplotlib to display an animation of the simulation. Run this with "python3 plot_fluid.py"
