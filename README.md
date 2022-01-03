@@ -35,7 +35,7 @@ In the given version of the code, the LB method has been implemented and a simpl
 has been set up to test the code. This is an analytic solution to the Navier-Stokes equation, which describes the time evolution
 of the fluid density and velocity fields. 
 Some tests to run:
--> The decay of a single vortex can be seen using a 40x40 grid, with 100 timesteps using mix = 0.8, p0=0, and v0=0.3. 
+-> The decay of a single vortex can be seen using a 40x40 grid, with 100 timesteps using mix = 0.8, p0=0, and v0=0.3. The 'iter' parameter sets a max number of iterations for the decay of the vortex. This may need to be adjusted; the given example works with iter=2000.  
 
 # COMPILATION AND RUNNING THE CODE
 I have compiled the source code on my machine using g++: 'g++ -std=c++14 lBoltz.cpp -o lBoltz
