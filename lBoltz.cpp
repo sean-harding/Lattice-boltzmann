@@ -115,14 +115,16 @@ int main(int argc, char *argv[]){
     are the values of the x-component of velocity, y-component of velocity and density of the TG solution at t=0
     */
     //------------------|TEST CASE PARAMETERS|------------------
-    double u0 = 0.1;
-    double kx = M_PI/10;
-    double ky = M_PI/10;
+    double u0 = 0.3;
+    double kx = 0.8*M_PI/std::atof(argv[2]);
+    double ky = 0.8*M_PI/std::atof(argv[3];
     double p0 = 1.0;        //This choice I suppose is somewhat arbitrary, but works fine
-    double d0 = 1.0; 
-    auto tg_x = [&kx,&ky,&u0](double x,double y){return -u0*sqrt(kx/ky)*cos(kx*x)*sin(ky*y);};
-    auto tg_y = [&kx,&ky,&u0](double x,double y){return u0*sqrt(kx/ky)*sin(kx*x)*cos(ky*y);};
-    auto tg_d = [&](double x,double y){return p0 + 3*0.25*d0*pow(u0,2)*(ky*cos(2*kx*x)/kx+kx*cos(2*ky*y)/ky);};
+    //double d0 = 1.0; 
+    double x0 = std::atof(argv[2])*0.5;
+    double y0 = std::atof(argv[2])*0.5;
+    auto tg_x = [&kx,&ky,&u0,&x0,&y0](double x,double y){return -u0*sqrt(kx/ky)*cos(kx*(x-x0))*sin(ky*(y-y0));};
+    auto tg_y = [&kx,&ky,&u0,&x0,&y0](double x,double y){return u0*sqrt(kx/ky)*sin(kx*x)*cos(ky*y);};
+    auto tg_d = [&](double x,double y){return p0 + 0.25*pow(u0,2)*(ky*cos(2*kx*(x-x0))/kx+kx*cos(2*ky*(y-y0))/ky);};
     
     //------------------|SIMULATION VARIABLES|------------------
     /* wx and wy are weights used in the calculation of the equilibrium distibution function
