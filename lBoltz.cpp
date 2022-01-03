@@ -173,7 +173,7 @@ int main(int argc, char *argv[]){
     double delta = 10;                  //The mod square difference in the dist. function between iterations when initializing
     int iter = 0;                       //To prevent the program from never finishing, we stop after a set number of iterations if the initialization fails
     
-    while(delta>tol&&iter<400){
+    while(delta>tol&&iter<2000){
         iter+=1;
         std::cout<<"Delta = "<<delta<<" Tolerance = "<<tol<<std::endl;
         delta=0;
